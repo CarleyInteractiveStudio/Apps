@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carley Apps</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <img src="imagenes/apps.png" alt="Carley Apps Logo" id="logo">
+        </header>
+        <main>
+            <div id="welcome-text">
+                <p>
+                    <strong>¡Bienvenido a Carley Apps!</strong>
+                </p>
+                <p>
+                    ¿Eres un diseñador? Tenemos la mejor <a href="./drawing_app/index.html">app de dibujo</a> para crear ilustraciones o animaciones frame a frame.
+                </p>
+                <p>
+                    ¿Quieres ganar dinero? Usa nuestra <a href="./ad_app/index.html">app de anuncios</a>, mira videos y reclama tus ganancias cada mes.
+                </p>
+                <p>
+                    Explora nuestro ecosistema de aplicaciones, diseñado para darte las herramientas que necesitas.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <div id="taskbar">
+        <button id="start-menu-button">
+            &#9776; <!-- Hamburger icon as placeholder -->
+        </button>
+    </div>
+
+    <div id="app-panel" class="hidden">
+        <div id="app-grid">
+            <a href="./ad_app/index.html" class="app-icon">
+                <img src="imagenes/AdPago.png" alt="AdPago App">
+                <span>AdPago</span>
+            </a>
+            <a href="./drawing_app/index.html" class="app-icon">
+                <img src="imagenes/appdedibujo.png" alt="Drawing App">
+                <span>Dibujo</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
