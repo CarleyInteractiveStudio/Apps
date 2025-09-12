@@ -1,0 +1,235 @@
+/* Inherit base styles from the main stylesheet */
+body {
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#app-container {
+    width: 100%;
+    height: 100%;
+}
+
+.page {
+    display: none; /* Pages are hidden by default */
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.page.active {
+    display: flex; /* The active page is shown */
+}
+
+/* Auth Page Styles */
+#auth-page {
+    flex-direction: column;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.auth-logo {
+    max-width: 100px;
+    margin-bottom: 1.5rem;
+}
+
+.form-container h2 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-text-color);
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #333;
+    border: 1px solid var(--secondary-color);
+    border-radius: 5px;
+    color: var(--primary-text-color);
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.form-container button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--accent-color);
+    color: var(--primary-text-color);
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.form-container button:hover {
+    background-color: var(--highlight-color);
+}
+
+.form-switch {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.form-switch a {
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.form-switch a:hover {
+    text-decoration: underline;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Ad Feed Page Styles */
+#ad-feed-page {
+    background-color: #000;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative; /* For header positioning */
+    overflow: hidden; /* Hide anything outside the viewport */
+}
+
+#feed-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    z-index: 10;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0));
+}
+
+#watch-time-tracker {
+    background-color: rgba(0,0,0,0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+#settings-button {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    color: white;
+    cursor: pointer;
+}
+
+#video-feed-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    /* This is the magic for the TikTok-style scroll */
+    scroll-snap-type: y mandatory;
+}
+
+.video-slide {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-slide video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Fill the screen without stretching */
+}
+
+/* Settings Page Styles */
+#settings-page {
+    background-color: var(--background-color);
+}
+
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.points-display {
+    background-color: rgba(0,0,0,0.2);
+    padding: 1.5rem 3rem;
+    border-radius: 8px;
+}
+
+.points-display p {
+    margin: 0;
+    font-size: 1rem;
+    color: #ccc;
+}
+
+.points-display h3 {
+    margin: 0.5rem 0;
+    font-size: 3rem;
+    color: var(--primary-text-color);
+}
+
+#logout-button, .back-button {
+    width: 100%;
+    max-width: 300px;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#logout-button {
+    background-color: var(--highlight-color);
+    color: var(--primary-text-color);
+}
+
+#logout-button:hover {
+    background-color: var(--accent-color);
+}
+
+.back-button {
+    background-color: var(--secondary-color);
+    color: var(--primary-text-color);
+}

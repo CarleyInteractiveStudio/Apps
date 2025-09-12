@@ -2,17 +2,88 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>App de Anuncios</title>
-    <style>
-        body { font-family: sans-serif; background-color: #1a1a1d; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        h1 { font-size: 3rem; color: #f5f5f5; }
-        p { margin-top: 2rem; }
-        a { color: #3498db; font-size: 1.2rem; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carley Apps - Ad App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style.css"> <!-- Link to main styles for theme consistency -->
 </head>
 <body>
-    <h1>App de Anuncios (En Construcción)</h1>
-    <p><a href="../index.html">← Volver al inicio</a></p>
+    <!-- This container will hold the different "pages" of our SPA -->
+    <div id="app-container">
+
+        <!-- Auth Page (Login/Register) -->
+        <section id="auth-page" class="page active">
+            <div class="form-container" id="login-container">
+                <img src="../imagenes/apps.png" alt="Carley Apps Logo" class="auth-logo">
+                <h2>Iniciar Sesión</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit">Entrar</button>
+                </form>
+                <p class="form-switch">¿No tienes cuenta? <a href="#" id="show-register">Regístrate</a></p>
+            </div>
+            <div class="form-container hidden" id="register-container">
+                <img src="../imagenes/apps.png" alt="Carley Apps Logo" class="auth-logo">
+                <h2>Crear Cuenta</h2>
+                <form id="register-form">
+                    <div class="input-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="register-password">Contraseña</label>
+                        <input type="password" id="register-password" minlength="6" required>
+                    </div>
+                    <button type="submit">Crear Cuenta</button>
+                </form>
+                <p class="form-switch">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a></p>
+            </div>
+        </section>
+
+        <!-- Ad Feed Page -->
+        <section id="ad-feed-page" class="page">
+            <header id="feed-header">
+                <div id="watch-time-tracker">
+                    <span>Tiempo: 0s</span>
+                </div>
+                <button id="settings-button">⚙️</button>
+            </header>
+            <div id="video-feed-container">
+                <div class="video-slide">
+                    <video src="https://videos.pexels.com/video-files/2099392/2099392-hd.mp4" loop preload="auto" playsinline></video>
+                </div>
+                <div class="video-slide">
+                    <video src="https://videos.pexels.com/video-files/3209828/3209828-hd.mp4" loop preload="auto" playsinline></video>
+                </div>
+                <div class="video-slide">
+                    <video src="https://videos.pexels.com/video-files/4434246/4434246-hd.mp4" loop preload="auto" playsinline></video>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Page -->
+        <section id="settings-page" class="page">
+            <div class="settings-container">
+                <h2>Configuración</h2>
+                <div class="points-display">
+                    <p>Tu Saldo</p>
+                    <h3 id="points-balance">0</h3>
+                    <p>Puntos</p>
+                </div>
+                <button id="logout-button">Cerrar Sesión</button>
+                <button id="close-settings-button" class="back-button">← Volver</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- We will load the JS logic in the next step -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
