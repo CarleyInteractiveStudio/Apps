@@ -183,3 +183,10 @@ p {
 .tool-button.danger:hover {
     background-color: #ff453a;
 }
+
+.tool-separator {
+    width: 2px;
+    height: 30px;
+    background-color: #545458;
+    margin: 0 10px;
+}

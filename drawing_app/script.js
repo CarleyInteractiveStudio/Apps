@@ -8,6 +8,8 @@ window.addEventListener('load', () => {
     const clearCanvasBtn = document.getElementById('clear-canvas');
     const addLayerBtn = document.getElementById('add-layer-btn');
     const layerList = document.getElementById('layer-list');
+    const saveProjectBtn = document.getElementById('save-project-btn');
+    const openProjectInput = document.getElementById('open-project-input');
 
     // --- STATE MANAGEMENT ---
     window.layers = []; // Exposed for testing
@@ -23,7 +25,7 @@ window.addEventListener('load', () => {
     let currentTool = 'pencil'; // 'pencil' or 'eraser'
 
     // --- CORE FUNCTIONS ---
-    function createNewLayer(name) {
+    function createNewLayer(name, setActive = true) {
         const layerId = nextLayerId++;
 
         const canvas = document.createElement('canvas');
@@ -43,12 +45,15 @@ window.addEventListener('load', () => {
             isVisible: true
         };
 
-        layers.push(newLayer);
+        window.layers.push(newLayer);
 
         // The new layer should be added at the top of the stack visually
         canvasContainer.insertBefore(canvas, canvasContainer.firstChild);
 
-        setActiveLayer(layerId);
+        // Don't automatically activate when loading a project
+        if (setActive) {
+            setActiveLayer(layerId);
+        }
         renderLayerList();
 
         console.log(`Layer ${layerId} created.`);
@@ -224,6 +229,167 @@ window.addEventListener('load', () => {
             console.log(`Layer ${layerId} visibility set to ${layer.isVisible}`);
         }
     }
+
+    // --- CORE SAVE/LOAD LOGIC ---
+
+    window.serializarProyecto = function() {
+        const projectData = {
+            layers: [],
+            // In the future, we could add other project-wide settings here
+        };
+
+        window.layers.forEach(layer => {
+            projectData.layers.push({
+                name: layer.name,
+                isVisible: layer.isVisible,
+                imageData: layer.canvas.toDataURL() // Export canvas as Base64 image
+            });
+        });
+
+        return JSON.stringify(projectData, null, 2);
+    }
+
+    window.cargarProyecto = async function(jsonString) {
+        try {
+            const projectData = JSON.parse(jsonString);
+            if (!projectData.layers || !Array.isArray(projectData.layers)) {
+                throw new Error("El archivo no tiene el formato correcto.");
+            }
+
+            clearProject();
+
+            // Use Promise.all to wait for all images to load before proceeding
+            await Promise.all(projectData.layers.map(async (layerData, index) => {
+                const newLayer = createNewLayer(layerData.name, false);
+                newLayer.isVisible = layerData.isVisible;
+
+                // Important: hide the canvas element if layer is not visible
+                newLayer.canvas.style.display = newLayer.isVisible ? 'block' : 'none';
+
+                if (layerData.imageData) {
+                    await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            newLayer.ctx.drawImage(img, 0, 0);
+                            resolve();
+                        };
+                        img.onerror = reject;
+                        img.src = layerData.imageData;
+                    });
+                }
+            }));
+
+            // Set the top-most layer as active after loading
+            if (window.layers.length > 0) {
+                setActiveLayer(window.layers[window.layers.length - 1].id);
+            }
+
+            renderLayerList();
+            console.log("Proyecto cargado exitosamente.");
+
+        } catch (error) {
+            console.error("Error al cargar el proyecto:", error);
+            alert("No se pudo cargar el archivo. Puede que esté dañado o no sea un archivo de proyecto válido.");
+        }
+    }
+
+    function clearProject() {
+        // Clear DOM
+        canvasContainer.innerHTML = '';
+        layerList.innerHTML = '';
+        // Clear state
+        window.layers = [];
+        activeLayerId = null;
+        nextLayerId = 1;
+    }
+
+    // --- EVENT LISTENERS (Save/Load) ---
+
+    saveProjectBtn.addEventListener('click', async () => {
+        if (window.showSaveFilePicker) {
+            console.log("Usando la API moderna para guardar...");
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    types: [{
+                        description: 'Carley Animation Files',
+                        accept: { 'application/json': ['.cea'] },
+                    }],
+                });
+                const writable = await fileHandle.createWritable();
+                const projectJson = serializarProyecto();
+                await writable.write(projectJson);
+                await writable.close();
+                console.log("Proyecto guardado exitosamente.");
+            } catch (error) {
+                console.error("Error al guardar (API moderna):", error);
+            }
+        } else {
+            console.log("Usando el método tradicional para guardar...");
+            try {
+                const projectJson = serializarProyecto();
+                const blob = new Blob([projectJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'proyecto.cea';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log("Proyecto descargado.");
+            } catch (error) {
+                console.error("Error al guardar (tradicional):", error);
+            }
+        }
+    });
+
+    // The 'open' button is a label, so we listen on the label for the modern API
+    // For the fallback, we listen on the hidden file input itself.
+    document.getElementById('open-project-btn').addEventListener('click', (e) => {
+        if (window.showOpenFilePicker) {
+            e.preventDefault(); // Prevent the file input from opening
+            openWithModernAPI();
+        }
+        // If the modern API is not present, this click will simply trigger the label's
+        // default behavior, which is to open the 'for' linked input.
+    });
+
+    async function openWithModernAPI() {
+        console.log("Usando la API moderna para abrir...");
+        try {
+            const [fileHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Carley Animation Files',
+                    accept: { 'application/json': ['.cea'] },
+                }],
+            });
+            const file = await fileHandle.getFile();
+            const contents = await file.text();
+            await cargarProyecto(contents);
+        } catch (error) {
+            console.error("Error al abrir (API moderna):", error);
+        }
+    }
+
+    openProjectInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            return;
+        }
+        console.log("Usando el método tradicional para abrir...");
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const contents = event.target.result;
+            cargarProyecto(contents);
+        };
+        reader.onerror = (error) => {
+            console.error("Error al abrir (tradicional):", error);
+            alert("No se pudo leer el archivo.");
+        };
+        reader.readAsText(file);
+    });
+
 
     // --- INITIALIZATION ---
     function initialize() {
