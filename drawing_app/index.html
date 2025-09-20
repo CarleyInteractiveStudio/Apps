@@ -12,32 +12,45 @@
         <p>Crea tus propias ilustraciones y animaciones.</p>
     </header>
 
-    <main>
-        <div class="toolbar">
-            <div class="tool">
-                <label for="color-picker">Color:</label>
-                <div id="color-palette">
-                    <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
-                    <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
-                    <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
-                    <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
-                    <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
-                    <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
-                </div>
-            </div>
-            <div class="tool">
-                <label for="brush-size">Tamaño:</label>
-                <input type="range" id="brush-size" min="1" max="50" value="5">
-            </div>
-            <div class="tool">
-                <button id="pencil-tool" class="tool-button active">Lápiz</button>
-                <button id="eraser-tool" class="tool-button">Borrador</button>
-            </div>
-            <div class="tool">
-                 <button id="clear-canvas" class="tool-button danger">Limpiar</button>
+    <div class="toolbar">
+        <div class="tool">
+            <label for="color-picker">Color:</label>
+            <div id="color-palette">
+                <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
             </div>
         </div>
-        <canvas id="drawing-canvas"></canvas>
+        <div class="tool">
+            <label for="brush-size">Tamaño:</label>
+            <input type="range" id="brush-size" min="1" max="50" value="5">
+        </div>
+        <div class="tool">
+            <button id="pencil-tool" class="tool-button active">Lápiz</button>
+            <button id="eraser-tool" class="tool-button">Borrador</button>
+        </div>
+        <div class="tool">
+             <button id="clear-canvas" class="tool-button danger">Limpiar Capa</button>
+        </div>
+    </div>
+
+    <main id="app-container">
+        <div id="canvas-container">
+            <!-- Canvases for each layer will be dynamically added here by JavaScript -->
+        </div>
+
+        <div id="layer-panel">
+            <div class="layer-panel-header">
+                <h3>Capas</h3>
+                <button id="add-layer-btn" class="tool-button">+</button>
+            </div>
+            <ul id="layer-list">
+                <!-- Layer items will be dynamically added here -->
+            </ul>
+        </div>
     </main>
 
     <script src="script.js"></script>
