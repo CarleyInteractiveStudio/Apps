@@ -190,3 +190,80 @@ p {
     background-color: #545458;
     margin: 0 10px;
 }
+
+#editor-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#timeline-panel {
+    width: 100%;
+    max-width: 1084px; /* Width of canvas + layers panel + gap */
+    background-color: #3a3a3c;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#timeline-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #545458;
+}
+
+#timeline-controls label {
+    font-size: 0.9rem;
+}
+
+#timeline-controls input[type="number"] {
+    width: 50px;
+    background-color: #2c2c2e;
+    color: white;
+    border: 1px solid #545458;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+#frame-track {
+    display: flex;
+    gap: 10px;
+    padding: 5px;
+    overflow-x: auto;
+    min-height: 100px;
+    background-color: #2c2c2e;
+    border-radius: 4px;
+}
+
+.frame-thumbnail {
+    width: 80px;
+    height: 60px;
+    border: 2px solid #545458;
+    border-radius: 4px;
+    background-color: white;
+    flex-shrink: 0; /* Prevent thumbnails from shrinking */
+    cursor: pointer;
+    position: relative;
+}
+
+.frame-thumbnail.active {
+    border-color: #007aff;
+    box-shadow: 0 0 5px #007aff;
+}
+
+.frame-thumbnail .frame-number {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.8rem;
+    color: black;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0 3px;
+    border-radius: 2px;
+}
