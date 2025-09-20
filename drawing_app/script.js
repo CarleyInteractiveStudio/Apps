@@ -10,47 +10,58 @@ window.addEventListener('load', () => {
     const layerList = document.getElementById('layer-list');
     const saveProjectBtn = document.getElementById('save-project-btn');
     const openProjectInput = document.getElementById('open-project-input');
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const zoomResetBtn = document.getElementById('zoom-reset-btn');
 
     // --- STATE MANAGEMENT ---
     window.layers = []; // Exposed for testing
     let activeLayerId = null;
     let nextLayerId = 1;
 
+    const view = { scale: 1.0, offsetX: 0, offsetY: 0 };
+
     let isDrawing = false;
+    let isDrawingShape = false;
     let lastX = 0;
     let lastY = 0;
+    let shapeStartX = 0;
+    let shapeStartY = 0;
 
     let brushSize = 5;
     let currentColor = '#000000';
-    let currentTool = 'pencil'; // 'pencil' or 'eraser'
+    let currentTool = 'pencil'; // pencil, eraser, line, rect, circle
 
     // --- CORE FUNCTIONS ---
+
     function createNewLayer(name, setActive = true) {
         const layerId = nextLayerId++;
 
-        const canvas = document.createElement('canvas');
-        canvas.id = `layer-${layerId}`;
-        canvas.className = 'layer-canvas';
-        canvas.width = 800;
-        canvas.height = 600;
-        canvasContainer.appendChild(canvas);
+        // Each layer now has a "view" canvas (in the DOM) and a "model" canvas (in memory)
+        const viewCanvas = document.createElement('canvas');
+        viewCanvas.id = `layer-view-${layerId}`;
+        viewCanvas.className = 'layer-canvas';
+        viewCanvas.width = 800;
+        viewCanvas.height = 600;
+        canvasContainer.appendChild(viewCanvas);
 
-        const ctx = canvas.getContext('2d');
+        const modelCanvas = document.createElement('canvas');
+        modelCanvas.width = 800;
+        modelCanvas.height = 600;
 
         const newLayer = {
             id: layerId,
             name: name || `Capa ${layerId}`,
-            canvas: canvas,
-            ctx: ctx,
+            viewCanvas: viewCanvas,
+            viewCtx: viewCanvas.getContext('2d'),
+            modelCanvas: modelCanvas,
+            modelCtx: modelCanvas.getContext('2d'),
             isVisible: true
         };
 
         window.layers.push(newLayer);
+        canvasContainer.insertBefore(viewCanvas, canvasContainer.firstChild);
 
-        // The new layer should be added at the top of the stack visually
-        canvasContainer.insertBefore(canvas, canvasContainer.firstChild);
-
-        // Don't automatically activate when loading a project
         if (setActive) {
             setActiveLayer(layerId);
         }
@@ -60,88 +71,257 @@ window.addEventListener('load', () => {
         return newLayer;
     }
 
+    // New function to redraw all layers based on the current view state
+    function redrawAllLayers() {
+        window.layers.forEach(layer => {
+            layer.viewCtx.clearRect(0, 0, layer.viewCanvas.width, layer.viewCanvas.height);
+            if (layer.isVisible) {
+                layer.viewCtx.save();
+                layer.viewCtx.translate(view.offsetX, view.offsetY);
+                layer.viewCtx.scale(view.scale, view.scale);
+                layer.viewCtx.drawImage(layer.modelCanvas, 0, 0);
+                layer.viewCtx.restore();
+            }
+        });
+    }
+
     function renderLayerList() {
-        layerList.innerHTML = ''; // Clear the list
+        layerList.innerHTML = '';
         [...layers].reverse().forEach(layer => {
             const li = document.createElement('li');
             li.className = `layer-item ${layer.id === activeLayerId ? 'active' : ''} ${!layer.isVisible ? 'layer-hidden' : ''}`;
             li.dataset.layerId = layer.id;
-
             const layerName = document.createElement('span');
             layerName.textContent = layer.name;
-
             const controls = document.createElement('div');
             controls.className = 'layer-controls';
-
             const visibilityBtn = document.createElement('button');
             visibilityBtn.innerHTML = layer.isVisible ? '👁️' : '🙈';
             visibilityBtn.dataset.action = 'toggle-visibility';
-
             const deleteBtn = document.createElement('button');
             deleteBtn.innerHTML = '🗑️';
             deleteBtn.dataset.action = 'delete';
-
             controls.appendChild(visibilityBtn);
             controls.appendChild(deleteBtn);
-
             li.appendChild(layerName);
             li.appendChild(controls);
-
             layerList.appendChild(li);
         });
     }
 
     function getActiveLayer() {
-        return layers.find(layer => layer.id === activeLayerId);
+        return window.layers.find(layer => layer.id === activeLayerId);
     }
 
     function setActiveLayer(layerId) {
         activeLayerId = layerId;
         renderLayerList();
-        console.log(`Layer ${layerId} is now active.`);
     }
 
+    // The main draw function now handles freehand drawing
     function draw(e) {
         if (!isDrawing) return;
 
         const activeLayer = getActiveLayer();
         if (!activeLayer || !activeLayer.isVisible) return;
 
-        const ctx = activeLayer.ctx;
-        ctx.lineWidth = brushSize;
+        // Transform mouse coordinates to model coordinates
+        const modelX = (e.offsetX - view.offsetX) / view.scale;
+        const modelY = (e.offsetY - view.offsetY) / view.scale;
+
+        const ctx = activeLayer.modelCtx;
+        ctx.lineWidth = brushSize / view.scale; // Adjust brush size for zoom
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = (currentTool === 'eraser') ? '#ffffff' : currentColor;
-
-        // Eraser in a multi-layer setup should draw transparently, not white
-        if (currentTool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-        } else {
-            ctx.globalCompositeOperation = 'source-over';
-        }
+        ctx.strokeStyle = currentColor;
+        ctx.globalCompositeOperation = (currentTool === 'eraser') ? 'destination-out' : 'source-over';
 
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
-        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.lineTo(modelX, modelY);
         ctx.stroke();
 
-        [lastX, lastY] = [e.offsetX, e.offsetY];
+        [lastX, lastY] = [modelX, modelY];
+
+        window.redrawSingleLayer(activeLayer);
+    }
+
+    function drawPreviewShape(e) {
+        // OBSOLETE
+        const modelX = (e.offsetX - view.offsetX) / view.scale;
+        const modelY = (e.offsetY - view.offsetY) / view.scale;
+
+        previewCtx.save();
+        previewCtx.translate(view.offsetX, view.offsetY);
+        previewCtx.scale(view.scale, view.scale);
+        previewCtx.lineWidth = brushSize / view.scale;
+        previewCtx.strokeStyle = currentColor;
+        previewCtx.beginPath();
+
+        const width = modelX - shapeStartX;
+        const height = modelY - shapeStartY;
+
+        switch (currentTool) {
+            case 'line':
+                previewCtx.moveTo(shapeStartX, shapeStartY);
+                previewCtx.lineTo(modelX, modelY);
+                break;
+            case 'rect':
+                previewCtx.rect(shapeStartX, shapeStartY, width, height);
+                break;
+            case 'circle':
+                const radius = Math.sqrt(width * width + height * height);
+                previewCtx.arc(shapeStartX, shapeStartY, radius, 0, 2 * Math.PI);
+                break;
+        }
+        previewCtx.stroke();
+        previewCtx.restore();
+    }
+
+    function drawFinalShape(e) {
+        const activeLayer = getActiveLayer();
+        if (!activeLayer) return;
+
+        const modelX = (e.offsetX - view.offsetX) / view.scale;
+        const modelY = (e.offsetY - view.offsetY) / view.scale;
+
+        const ctx = activeLayer.modelCtx;
+        ctx.lineWidth = brushSize / view.scale;
+        ctx.strokeStyle = currentColor;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.beginPath();
+
+        const width = modelX - shapeStartX;
+        const height = modelY - shapeStartY;
+
+        switch (currentTool) {
+            case 'line':
+                ctx.moveTo(shapeStartX, shapeStartY);
+                ctx.lineTo(modelX, modelY);
+                break;
+            case 'rect':
+                ctx.rect(shapeStartX, shapeStartY, width, height);
+                break;
+            case 'circle':
+                const radius = Math.sqrt(width * width + height * height);
+                ctx.arc(shapeStartX, shapeStartY, radius, 0, 2 * Math.PI);
+                break;
+        }
+        ctx.stroke();
+
+        window.redrawSingleLayer(activeLayer);
+    }
+
+    // New helper to redraw just one layer's view, for performance
+    window.redrawSingleLayer = function(layer){
+        if (!layer) return;
+        layer.viewCtx.clearRect(0, 0, layer.viewCanvas.width, layer.viewCanvas.height);
+        if (layer.isVisible) {
+            layer.viewCtx.save();
+            layer.viewCtx.translate(view.offsetX, view.offsetY);
+            layer.viewCtx.scale(view.scale, view.scale);
+            layer.viewCtx.drawImage(layer.modelCanvas, 0, 0);
+            layer.viewCtx.restore();
+        }
     }
 
     // --- EVENT LISTENERS ---
 
-    // Drawing Listeners on the container
     canvasContainer.addEventListener('mousedown', (e) => {
-        isDrawing = true;
-        [lastX, lastY] = [e.offsetX, e.offsetY];
+        if (currentTool === 'pencil' || currentTool === 'eraser') {
+            isDrawing = true;
+            lastX = (e.offsetX - view.offsetX) / view.scale;
+            lastY = (e.offsetY - view.offsetY) / view.scale;
+        } else {
+            isDrawingShape = true;
+            shapeStartX = (e.offsetX - view.offsetX) / view.scale;
+            shapeStartY = (e.offsetY - view.offsetY) / view.scale;
+        }
     });
-    canvasContainer.addEventListener('mousemove', draw);
-    canvasContainer.addEventListener('mouseup', () => isDrawing = false);
-    canvasContainer.addEventListener('mouseout', () => isDrawing = false);
+
+    canvasContainer.addEventListener('mousemove', (e) => {
+        if (isDrawing) {
+            draw(e);
+        } else if (isDrawingShape) {
+            // No preview for now to simplify debugging
+        }
+    });
+
+    canvasContainer.addEventListener('mousedown', (e) => {
+        if (currentTool === 'pencil' || currentTool === 'eraser') {
+            isDrawing = true;
+            lastX = (e.offsetX - view.offsetX) / view.scale;
+            lastY = (e.offsetY - view.offsetY) / view.scale;
+        } else {
+            isDrawingShape = true;
+            shapeStartX = (e.offsetX - view.offsetX) / view.scale;
+            shapeStartY = (e.offsetY - view.offsetY) / view.scale;
+        }
+
+        // Add mouseup listener to the window to catch release anywhere
+        window.addEventListener('mouseup', handleMouseUp, { once: true });
+    });
+
+    function handleMouseUp(e) {
+        if (isDrawingShape) {
+            // Need to get coordinates relative to the canvas, even if mouse is outside
+            const rect = canvasContainer.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+
+            // Create a synthetic event object with offsetX/Y for drawFinalShape
+            const syntheticEvent = { offsetX: endX, offsetY: endY };
+            drawFinalShape(syntheticEvent);
+            isDrawingShape = false;
+        }
+        isDrawing = false;
+    }
+
+    canvasContainer.addEventListener('mousemove', (e) => {
+        if (isDrawing) {
+            draw(e);
+        } else if (isDrawingShape) {
+            // Preview logic would go here if re-enabled
+        }
+    });
+
+    canvasContainer.addEventListener('mouseout', (e) => {
+        // Only cancel freehand drawing on mouse out
+        if (isDrawing) {
+            isDrawing = false;
+        }
+    });
 
     // Toolbar Listeners
-    brushSizeSlider.addEventListener('input', (e) => {
-        brushSize = e.target.value;
+    brushSizeSlider.addEventListener('input', (e) => brushSize = e.target.value);
+
+    zoomInBtn.addEventListener('click', () => {
+        view.scale *= 1.2;
+        redrawAllLayers();
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+        view.scale /= 1.2;
+        redrawAllLayers();
+    });
+
+    zoomResetBtn.addEventListener('click', () => {
+        view.scale = 1.0;
+        view.offsetX = 0;
+        view.offsetY = 0;
+        redrawAllLayers();
+    });
+
+    document.querySelector('.tool-group').addEventListener('click', (e) => {
+        const clickedTool = e.target.closest('.tool-button');
+        if (clickedTool && clickedTool.dataset.tool) {
+            currentTool = clickedTool.dataset.tool;
+            // Remove active class from all tool buttons
+            document.querySelectorAll('.tool-group .tool-button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to the clicked one
+            clickedTool.classList.add('active');
+            console.log("Herramienta seleccionada:", currentTool);
+        }
     });
 
     colorPalette.addEventListener('click', (e) => {
@@ -149,128 +329,79 @@ window.addEventListener('load', () => {
             currentColor = e.target.dataset.color;
             document.querySelectorAll('.color-option').forEach(option => option.classList.remove('active'));
             e.target.classList.add('active');
-            currentTool = 'pencil';
-            pencilTool.classList.add('active');
-            eraserTool.classList.remove('active');
         }
     });
 
-    pencilTool.addEventListener('click', () => {
-        currentTool = 'pencil';
-        pencilTool.classList.add('active');
-        eraserTool.classList.remove('active');
-    });
-
-    eraserTool.addEventListener('click', () => {
-        currentTool = 'eraser';
-        eraserTool.classList.add('active');
-        pencilTool.classList.remove('active');
-    });
-
+    // Clear button now clears the MODEL canvas
     clearCanvasBtn.addEventListener('click', () => {
         const activeLayer = getActiveLayer();
         if (activeLayer) {
-            activeLayer.ctx.clearRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
-            console.log(`Layer ${activeLayer.id} cleared.`);
+            activeLayer.modelCtx.clearRect(0, 0, activeLayer.modelCanvas.width, activeLayer.modelCanvas.height);
+            window.redrawSingleLayer(activeLayer); // Update the view
         }
     });
 
     // Layer Panel Listeners
-    addLayerBtn.addEventListener('click', () => {
-        createNewLayer();
-    });
+    addLayerBtn.addEventListener('click', () => createNewLayer());
 
     layerList.addEventListener('click', (e) => {
         const target = e.target;
         const layerItem = target.closest('.layer-item');
         if (!layerItem) return;
-
         const layerId = Number(layerItem.dataset.layerId);
         const action = target.dataset.action;
-
-        if (action === 'delete') {
-            deleteLayer(layerId);
-        } else if (action === 'toggle-visibility') {
-            toggleLayerVisibility(layerId);
-        } else {
-            // If no action button was clicked, assume the user wants to select the layer
-            setActiveLayer(layerId);
-        }
+        if (action === 'delete') deleteLayer(layerId);
+        else if (action === 'toggle-visibility') toggleLayerVisibility(layerId);
+        else setActiveLayer(layerId);
     });
 
     function deleteLayer(layerId) {
-        if (layers.length <= 1) {
-            alert("No se puede eliminar la última capa.");
-            return;
-        }
-
-        // Remove from DOM
-        const canvasToRemove = document.getElementById(`layer-${layerId}`);
-        if(canvasToRemove) canvasToRemove.remove();
-
-        // Remove from state
-        layers = layers.filter(layer => layer.id !== layerId);
-
-        // If the active layer was deleted, set a new active layer
+        if (window.layers.length <= 1) return alert("No se puede eliminar la última capa.");
+        const layerIdx = window.layers.findIndex(l => l.id === layerId);
+        const [deletedLayer] = window.layers.splice(layerIdx, 1);
+        deletedLayer.viewCanvas.remove();
         if (activeLayerId === layerId) {
-            setActiveLayer(layers[layers.length - 1].id);
+            setActiveLayer(window.layers[window.layers.length - 1].id);
         }
-
         renderLayerList();
-        console.log(`Layer ${layerId} deleted.`);
     }
 
     function toggleLayerVisibility(layerId) {
-        const layer = layers.find(l => l.id === layerId);
+        const layer = window.layers.find(l => l.id === layerId);
         if (layer) {
             layer.isVisible = !layer.isVisible;
-            layer.canvas.style.display = layer.isVisible ? 'block' : 'none';
+            window.redrawSingleLayer(layer); // Redraw to show/hide it
             renderLayerList();
-            console.log(`Layer ${layerId} visibility set to ${layer.isVisible}`);
         }
     }
 
     // --- CORE SAVE/LOAD LOGIC ---
 
     window.serializarProyecto = function() {
-        const projectData = {
-            layers: [],
-            // In the future, we could add other project-wide settings here
-        };
-
+        const projectData = { layers: [] };
         window.layers.forEach(layer => {
             projectData.layers.push({
                 name: layer.name,
                 isVisible: layer.isVisible,
-                imageData: layer.canvas.toDataURL() // Export canvas as Base64 image
+                imageData: layer.modelCanvas.toDataURL() // Save from the MODEL canvas
             });
         });
-
         return JSON.stringify(projectData, null, 2);
-    }
+    };
 
     window.cargarProyecto = async function(jsonString) {
         try {
             const projectData = JSON.parse(jsonString);
-            if (!projectData.layers || !Array.isArray(projectData.layers)) {
-                throw new Error("El archivo no tiene el formato correcto.");
-            }
-
+            if (!projectData.layers || !Array.isArray(projectData.layers)) throw new Error("Invalid project file format.");
             clearProject();
-
-            // Use Promise.all to wait for all images to load before proceeding
-            await Promise.all(projectData.layers.map(async (layerData, index) => {
+            await Promise.all(projectData.layers.map(async (layerData) => {
                 const newLayer = createNewLayer(layerData.name, false);
                 newLayer.isVisible = layerData.isVisible;
-
-                // Important: hide the canvas element if layer is not visible
-                newLayer.canvas.style.display = newLayer.isVisible ? 'block' : 'none';
-
                 if (layerData.imageData) {
                     await new Promise((resolve, reject) => {
                         const img = new Image();
                         img.onload = () => {
-                            newLayer.ctx.drawImage(img, 0, 0);
+                            newLayer.modelCtx.drawImage(img, 0, 0); // Load into MODEL canvas
                             resolve();
                         };
                         img.onerror = reject;
@@ -278,33 +409,26 @@ window.addEventListener('load', () => {
                     });
                 }
             }));
-
-            // Set the top-most layer as active after loading
             if (window.layers.length > 0) {
                 setActiveLayer(window.layers[window.layers.length - 1].id);
             }
-
+            redrawAllLayers(); // Redraw all views after loading
             renderLayerList();
-            console.log("Proyecto cargado exitosamente.");
-
         } catch (error) {
-            console.error("Error al cargar el proyecto:", error);
-            alert("No se pudo cargar el archivo. Puede que esté dañado o no sea un archivo de proyecto válido.");
+            console.error("Failed to load project:", error);
+            alert("Could not load the project file.");
         }
-    }
+    };
 
     function clearProject() {
-        // Clear DOM
         canvasContainer.innerHTML = '';
         layerList.innerHTML = '';
-        // Clear state
         window.layers = [];
         activeLayerId = null;
         nextLayerId = 1;
     }
 
     // --- EVENT LISTENERS (Save/Load) ---
-
     saveProjectBtn.addEventListener('click', async () => {
         if (window.showSaveFilePicker) {
             console.log("Usando la API moderna para guardar...");
@@ -344,15 +468,11 @@ window.addEventListener('load', () => {
         }
     });
 
-    // The 'open' button is a label, so we listen on the label for the modern API
-    // For the fallback, we listen on the hidden file input itself.
     document.getElementById('open-project-btn').addEventListener('click', (e) => {
         if (window.showOpenFilePicker) {
-            e.preventDefault(); // Prevent the file input from opening
+            e.preventDefault();
             openWithModernAPI();
         }
-        // If the modern API is not present, this click will simply trigger the label's
-        // default behavior, which is to open the 'for' linked input.
     });
 
     async function openWithModernAPI() {
@@ -374,9 +494,7 @@ window.addEventListener('load', () => {
 
     openProjectInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (!file) {
-            return;
-        }
+        if (!file) return;
         console.log("Usando el método tradicional para abrir...");
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -390,16 +508,12 @@ window.addEventListener('load', () => {
         reader.readAsText(file);
     });
 
-
     // --- INITIALIZATION ---
     function initialize() {
-        createNewLayer("Fondo"); // Create the first layer, e.g., "Background"
-
-        // Set initial active color in UI
+        createNewLayer("Fondo");
         const initialColor = document.querySelector('.color-option[data-color="#000000"]');
-        if(initialColor) initialColor.classList.add('active');
-
-        console.log('Layer-based drawing app initialized.');
+        if (initialColor) initialColor.classList.add('active');
+        console.log('Shape-ready drawing app initialized.');
     }
 
     initialize();
