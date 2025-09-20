@@ -2,17 +2,44 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>App de Dibujo</title>
-    <style>
-        body { font-family: sans-serif; background-color: #1a1a1d; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        h1 { font-size: 3rem; color: #f5f5f5; }
-        p { margin-top: 2rem; }
-        a { color: #3498db; font-size: 1.2rem; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>App de Dibujo (En Construcción)</h1>
-    <p><a href="../index.html">← Volver al inicio</a></p>
+    <header>
+        <h1>App de Dibujo</h1>
+        <p>Crea tus propias ilustraciones y animaciones.</p>
+    </header>
+
+    <main>
+        <div class="toolbar">
+            <div class="tool">
+                <label for="color-picker">Color:</label>
+                <div id="color-palette">
+                    <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                    <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                    <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                    <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                    <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                    <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                </div>
+            </div>
+            <div class="tool">
+                <label for="brush-size">Tamaño:</label>
+                <input type="range" id="brush-size" min="1" max="50" value="5">
+            </div>
+            <div class="tool">
+                <button id="pencil-tool" class="tool-button active">Lápiz</button>
+                <button id="eraser-tool" class="tool-button">Borrador</button>
+            </div>
+            <div class="tool">
+                 <button id="clear-canvas" class="tool-button danger">Limpiar</button>
+            </div>
+        </div>
+        <canvas id="drawing-canvas"></canvas>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
