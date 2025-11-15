@@ -1,2 +1,0 @@
-# Apps
-para creear apps

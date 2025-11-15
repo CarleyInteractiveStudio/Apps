@@ -1,0 +1,11 @@
+{
+  "id": 2,
+  "nombre": "Carrera Cósmica",
+  "imagen_principal": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+  "creador": "Desarrollos Galácticos",
+  "fecha_creacion": "2024-08-22",
+  "plataformas": ["Móvil", "Tablet"],
+  "disponibilidad": "Próximamente",
+  "descripcion": "Compite en carreras a través de la galaxia en este vertiginoso juego de naves espaciales.",
+  "fotos_adicionales": []
+}
