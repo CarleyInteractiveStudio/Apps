@@ -2,6 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Determina el directorio actual de una manera robusta para módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,7 +18,8 @@ app.use(express.json());
 // Endpoint para obtener todos los juegos
 app.get('/api/games', async (req, res) => {
   try {
-    const dataDir = './data';
+    // Usa una ruta absoluta a la carpeta 'data'
+    const dataDir = path.join(__dirname, 'data');
     const files = await fs.readdir(dataDir);
     const gamesData = [];
 
